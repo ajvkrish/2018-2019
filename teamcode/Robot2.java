@@ -83,8 +83,8 @@ public class Robot2 {
     private double lifterCurrentPosition = 0.0;
 
     private final double RADIUS_OF_SPOOL = 1;
-    private final double LOCK_DISTANCE = 1;
-    private final double UNLOCK_DISTANCE = 1;
+    private final double LOCK_DISTANCE = 2600;
+    private final double UNLOCK_DISTANCE = 2900;
 
     private final double GRIPPER1_CLOSED = .4;
     private final double GRIPPER1_OPEN = 0.0;
@@ -1383,6 +1383,9 @@ public class Robot2 {
         }
     }
 
+    public void setFlipperPower(double power){
+        flipper.setPower(power/8);
+    }
 
 
 

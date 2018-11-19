@@ -25,15 +25,15 @@ public class TwoControllerTeleOp extends OpMode {
     private double currentAngle;
     private double angleDifference;
     private double angleDirection;
-    private Position initialPosition;
-    private Velocity initialVelocity;
+//    private Position initialPosition;
+//    private Velocity initialVelocity;
 
     private double governor = 0.75;
     private double rotationGovernor = 0.3;
     private double lastHeading = 0.0;
-    private boolean accelerometerCalibrated=false;
+//    private boolean accelerometerCalibrated=false;
 
-    private List<VuforiaTrackable> allTrackables=null;
+//    private List<VuforiaTrackable> allTrackables=null;
 
     @Override
     public void init() {
@@ -41,8 +41,8 @@ public class TwoControllerTeleOp extends OpMode {
         robot.runUsingEncoders();
         controller1 = new Controller(gamepad1);
         controller2 = new Controller(gamepad2);
-        initialPosition= new Position(DistanceUnit.METER,0,0,0,0);
-        initialVelocity= new Velocity(DistanceUnit.METER,0,0,0,0);
+//        initialPosition= new Position(DistanceUnit.METER,0,0,0,0);
+//        initialVelocity= new Velocity(DistanceUnit.METER,0,0,0,0);
        // allTrackables=robot.vuforiaInit();
     }
 
@@ -51,18 +51,18 @@ public class TwoControllerTeleOp extends OpMode {
         controller1.update();
         controller2.update();
 
-        if (robot.isGyroCalibrated() && robot.isAccelerometerCalibrated()) {
+        if (robot.isGyroCalibrated()) {
             robot.loop();
             lastHeading = robot.getHeading();
         }
 
-        if (robot.isAccelerometerCalibrated() && !accelerometerCalibrated) {
-            robot.startAccelerationIntegration(initialPosition, initialVelocity, 5);
-            accelerometerCalibrated=true;
-        }
-        //robot.vuforiaLoop(allTrackables);
+//        if (robot.isAccelerometerCalibrated() && !accelerometerCalibrated) {
+//            robot.startAccelerationIntegration(initialPosition, initialVelocity, 5);
+//            accelerometerCalibrated=true;
+//        }
+//        //robot.vuforiaLoop(allTrackables);
         telemetry.addData("Gyro Ready?", robot.isGyroCalibrated() ? "YES" : "no.");
-        telemetry.addData("Accelerometer Ready?", robot.isAccelerometerCalibrated() ? "YES" : "no.");
+       // telemetry.addData("Accelerometer Ready?", robot.isAccelerometerCalibrated() ? "YES" : "no.");
         telemetry.update();
     }
 
@@ -96,52 +96,63 @@ public class TwoControllerTeleOp extends OpMode {
             robot.rotatingTowardsCryptoBox();
         else*/
 
-        if(controller1.XOnce())
-            tankDrive=!tankDrive;
+//        if(controller1.XOnce())
+//            tankDrive=!tankDrive;
+//
+//        robot.rotation = controller1.left_stick_x;
+//
+//
+//        final double speed = Math.min(governor, Math.abs(controller1.left_stick_y));
+//        double direction = controller1.left_stick_y/Math.abs(controller1.left_stick_y);
+//
+//        if(controller1.right_stick_x>.05 || controller1.right_stick_x<(-.05) || controller1.right_stick_y>.05 || controller1.right_stick_y<(-.05))
+//            gyroRotate=true;
+//        else
+//            gyroRotate=false;
+//
+//
+//        targetAngle=Math.atan(controller1.right_stick_y/controller1.right_stick_x);
+//        currentAngle=robot.getHeading();
+//
+//        if(currentAngle<(-1*Math.PI))
+//            currentAngle+=2*Math.PI;
+//        if(currentAngle>(Math.PI))
+//            currentAngle-=2*Math.PI;
+//        if(targetAngle<(-1*Math.PI))
+//            targetAngle+=2*Math.PI;
+//        if(targetAngle>(Math.PI))
+//            targetAngle-=2*Math.PI;
+//
+//        angleDirection=Math.abs(targetAngle)/targetAngle;
+//
+//        if(gyroRotate=true)
+//            robot.rotation= (targetAngle-currentAngle)/Math.PI;
+//
+//        double leftPower = speed*direction+robot.rotation*rotationGovernor;
+//        double rightPower = speed*direction-robot.rotation*rotationGovernor;
+//
+//        telemetry.addData("Speed: ", speed);
+//        telemetry.addData("Direction: ", direction);
+//        telemetry.addData("Robot.Rotation: ",robot.rotation);
+//        telemetry.addData("Is Blue on Left? ",robot.isBlueOnLeft());
 
-        robot.rotation = controller1.left_stick_x;
-
-
-        final double speed = Math.min(governor, Math.abs(controller1.left_stick_y));
-        double direction = controller1.left_stick_y/Math.abs(controller1.left_stick_y);
-
-        if(controller1.right_stick_x>.05 || controller1.right_stick_x<(-.05) || controller1.right_stick_y>.05 || controller1.right_stick_y<(-.05))
-            gyroRotate=true;
-        else
-            gyroRotate=false;
-
-
-        targetAngle=Math.atan(controller1.right_stick_y/controller1.right_stick_x);
-        currentAngle=robot.getHeading();
-
-        if(currentAngle<(-1*Math.PI))
-            currentAngle+=2*Math.PI;
-        if(currentAngle>(Math.PI))
-            currentAngle-=2*Math.PI;
-        if(targetAngle<(-1*Math.PI))
-            targetAngle+=2*Math.PI;
-        if(targetAngle>(Math.PI))
-            targetAngle-=2*Math.PI;
-
-        angleDirection=Math.abs(targetAngle)/targetAngle;
-
-        if(gyroRotate=true)
-            robot.rotation= (targetAngle-currentAngle)/Math.PI;
-
-        double leftPower = speed*direction+robot.rotation*rotationGovernor;
-        double rightPower = speed*direction-robot.rotation*rotationGovernor;
-
-        telemetry.addData("Speed: ", speed);
-        telemetry.addData("Direction: ", direction);
-        telemetry.addData("Robot.Rotation: ",robot.rotation);
-        telemetry.addData("Is Blue on Left? ",robot.isBlueOnLeft());
-
-        if(tankDrive){
-            leftPower=controller1.left_stick_y;
-            rightPower=controller1.right_stick_y;
-        }
+        //if(tankDrive){
+        double leftPower=Math.pow(controller1.left_stick_y,3)/2;
+        double rightPower=Math.pow(controller1.right_stick_y,3)/2;
+        //}
         robot.setMotors(leftPower, rightPower);
 
+        if(controller2.AOnce())
+            robot.incrementTmUp();
+        if(controller2.BOnce())
+            robot.incrementTmDown();
+        if(controller2.XOnce()) {
+            if (robot.getTmPosition() == 0)
+                robot.deployTeamMarker();
+            else
+                robot.undeployTeamMarker();
+        }
+        telemetry.addData("Team Marker Position:",robot.getTmPosition());
 //        if (controller1.right_trigger>.05)
 //            robot.moveFlipper(controller1.right_trigger * .15 * -1);
 //        else if (controller1.left_trigger>.05)
@@ -167,21 +178,24 @@ public class TwoControllerTeleOp extends OpMode {
 //
 
 
-        if(controller2.YOnce())
-            robot.toggleLifter();
+//        if(controller2.YOnce())
+//            robot.toggleLifter();
 //        if(controller2.XOnce())
 //            robot.customtoggleLifter();
 
 
         robot.moveLifter(controller2.left_stick_y);
 
+        robot.setFlipperPower(controller2.right_stick_y);
 //        telemetry.addData("Current Position: ",robot.currentPosition);
 //        telemetry.addData("X: ",robot.currentPosition.x);
 //        telemetry.addData("Y: ",robot.currentPosition.y);
 //        telemetry.addData("Z: ",robot.currentPosition.z);
 //        telemetry.addData("Current Velocity: ", robot.currentVeloity);
 //        telemetry.addData("Current Acceleration: ", robot.currentAcceleration);
+        robot.getGold();
         telemetry.addData("Lifter Ticks: ", robot.getLifterPosition());
+        telemetry.addData("Flipper Ticks: ", robot.getFlipperPosition());
         telemetry.addData("Left Ticks: ", robot.getLeftPosition());
         telemetry.addData("Right Ticks: ", robot.getRightPosition());
         telemetry.update();

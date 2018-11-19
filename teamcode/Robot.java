@@ -11,6 +11,7 @@ import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.SwitchableLight;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -39,6 +40,9 @@ import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
 import android.content.Context;
 import org.firstinspires.ftc.robotcore.external.navigation.Velocity;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
+import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
+import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,10 +71,10 @@ public class Robot {
 //    private final Servo gripper1, gripper2;
 //    private final Servo wrist;
     //private final Servo relicArmGripper;
-//    private final DcMotor flipper;
-//    private final Servo jewelArm;
+    private final DcMotor flipper;
+    private final Servo tm;
 //    private final Servo relicClaw;
-    public final NormalizedColorSensor colorSensor;
+  //  public final NormalizedColorSensor colorSensor;
 
     //up,up,down,down,left,right,left,right, b, a
 
@@ -85,9 +89,9 @@ public class Robot {
     private double lifterCurrentPosition = 0.0;
 
     private final double RADIUS_OF_SPOOL = .625;
-    private final double LOCK_DISTANCE = 8.25;
-    private final double UNLOCK_DISTANCE = 8.875-8.25+4;
-    private final double LIFT_DISTANCE=-4;
+    private final int LOCK_DISTANCE = -2100;//2600
+    private final int UNLOCK_DISTANCE = -2600;//2900
+    private final int LIFT_DISTANCE=-1400;//600
 
     private final double GRIPPER1_CLOSED = .4;
     private final double GRIPPER1_OPEN = 0.0;
@@ -169,6 +173,12 @@ public class Robot {
 
     VuforiaLocalizer vuforia;
 
+    private static final String TFOD_MODEL_ASSET = "RoverRuckus.tflite";
+    private static final String LABEL_GOLD_MINERAL = "Gold Mineral";
+    private static final String LABEL_SILVER_MINERAL = "Silver Mineral";
+
+    private TFObjectDetector tfod;
+
 
     /*
         1120 ticks per wrev
@@ -212,6 +222,14 @@ public class Robot {
         hardwareMap = _hardwareMap;
         telemetry = _telemetry;
 
+        vuforiaInit();
+
+        if (ClassFactory.getInstance().canCreateTFObjectDetector()) {
+            initTfod();
+        } else {
+            telemetry.addData("Sorry!", "This device is not compatible with TFOD");
+        }
+
         left = hardwareMap.dcMotor.get("left");
         right = hardwareMap.dcMotor.get("right");
 //        rake = hardwareMap.dcMotor.get("rake");
@@ -220,28 +238,28 @@ public class Robot {
 //        gripper2 = hardwareMap.servo.get("gripper2");
         lifter = hardwareMap.dcMotor.get("lifter");
         //relicArmGripper = hardwareMap.servo.get("");
-      //  flipper = hardwareMap.dcMotor.get("flipper");
-//        jewelArm = hardwareMap.servo.get("ja");
+        flipper = hardwareMap.dcMotor.get("flipper");
+        tm = hardwareMap.servo.get("tm");
 //        relicClaw = hardwareMap.servo.get("relicClaw");
-        colorSensor = hardwareMap.get(NormalizedColorSensor.class, "cs");
+     //   colorSensor = hardwareMap.get(NormalizedColorSensor.class, "cs");
 
 //        rake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 //        rake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 //        rake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         right.setDirection(DcMotorSimple.Direction.REVERSE);
-        //flipper.setDirection(DcMotorSimple.Direction.REVERSE);
+       // flipper.setDirection(DcMotorSimple.Direction.REVERSE);
 //        rake.setDirection(DcMotorSimple.Direction.REVERSE);
-//        flipperLastPosition = flipper.getCurrentPosition();
+        flipperLastPosition = flipper.getCurrentPosition();
 
 
         left.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         right.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        //flipper.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        flipper.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         lifter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         lifter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        lifter.setDirection(DcMotorSimple.Direction.REVERSE);
+        lifter.setDirection(DcMotorSimple.Direction.FORWARD);
 
         left.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         right.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -269,9 +287,74 @@ public class Robot {
 //            ((SwitchableLight)colorSensor).enableLight(true);
 //        }
 //
-//        flipper.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        flipper.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
+    private void initVuforia() {
+        /*
+         * Configure Vuforia by creating a Parameter object, and passing it to the Vuforia engine.
+         */
+        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
+
+        parameters.vuforiaLicenseKey = VUFORIA_KEY;
+        parameters.cameraDirection = VuforiaLocalizer.CameraDirection.BACK;
+
+        //  Instantiate the Vuforia engine
+        vuforia = ClassFactory.getInstance().createVuforia(parameters);
+
+        // Loading trackables is not necessary for the Tensor Flow Object Detection engine.
+    }
+
+    private void initTfod() {
+        int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
+                "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
+        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
+        tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_GOLD_MINERAL, LABEL_SILVER_MINERAL);
+    }
+
+    public int getGold() {
+        if (tfod != null) {
+            tfod.activate();
+        }
+
+        if (tfod != null) {
+            // getUpdatedRecognitions() will return null if no new information is available since
+            // the last time that call was made.
+            List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
+            if (updatedRecognitions != null) {
+                telemetry.addData("# Object Detected", updatedRecognitions.size());
+                if (updatedRecognitions.size() == 3) {
+                    int goldMineralX = -1;
+                    int silverMineral1X = -1;
+                    int silverMineral2X = -1;
+                    for (Recognition recognition : updatedRecognitions) {
+                        if (recognition.getLabel().equals(LABEL_GOLD_MINERAL)) {
+                            goldMineralX = (int) recognition.getLeft();
+                        } else if (silverMineral1X == -1) {
+                            silverMineral1X = (int) recognition.getLeft();
+                        } else {
+                            silverMineral2X = (int) recognition.getLeft();
+                        }
+                    }
+                    if (goldMineralX != -1 && silverMineral1X != -1 && silverMineral2X != -1) {
+                        if (goldMineralX < silverMineral1X && goldMineralX < silverMineral2X) {
+                            telemetry.addData("Gold Mineral Position", "Left");
+                            return 1;
+                        } else if (goldMineralX > silverMineral1X && goldMineralX > silverMineral2X) {
+                            telemetry.addData("Gold Mineral Position", "Right");
+                            return 3;
+                        } else {
+                            telemetry.addData("Gold Mineral Position", "Center");
+                            return 2;
+                        }
+                    }
+                }
+                telemetry.update();
+            }
+        }
+        return 0;
+    }
 
     private void setMotorMode(DcMotor.RunMode mode, DcMotor... motors) {
         for (DcMotor motor : motors) {
@@ -547,11 +630,11 @@ public class Robot {
 //        flipper.setPower(1.0);
 //        flipper.setTargetPosition(position);
 //    }
-//
-//    public int getFlipperPosition() {
-//        return flipper.getCurrentPosition();
-//    }
-//
+
+    public int getFlipperPosition() {
+        return flipper.getCurrentPosition();
+    }
+
 //    public void toggleFlipper() {
 //        if (flipper.getMode() != DcMotor.RunMode.RUN_TO_POSITION)
 //            flipper.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -683,6 +766,30 @@ public class Robot {
         right.setPower(power);
     }
 
+    public void deployTeamMarker(){
+        tm.setPosition(.64);
+    }
+    public void undeployTeamMarker(){
+        tm.setPosition(0);
+    }
+    public double getTmPosition(){
+        return tm.getPosition();
+    }
+
+    public void incrementTmUp(){
+        if(tm.getPosition()+.03>1)
+            tm.setPosition(1);
+        else
+            tm.setPosition(tm.getPosition()+.03);
+    }
+
+    public void incrementTmDown(){
+        if(tm.getPosition()-.03<0)
+            tm.setPosition(0);
+        else
+            tm.setPosition(tm.getPosition()-.03);
+    }
+
     public void toggleLifter() {
         if (isLocked)
             lift();
@@ -694,27 +801,39 @@ public class Robot {
             lock();
     }
 
+    public void unlatch(){
+//        int ticks=20;
+//        lifter.setTargetPosition(ticks);
+//        lifter.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//        lifter.setPower(0.1);
+        lifter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        lifter.setPower(.4);
+    }
+
     public void lock(){
-        int ticks=(int)(LOCK_DISTANCE*(1/(Math.PI*2*RADIUS_OF_SPOOL))*GEAR_RATIO*TICKS_PER_MOTOR_REV_GOBILDA/8);
-        lifter.setTargetPosition(ticks + lifter.getCurrentPosition());
+        //int ticks=(int)(LOCK_DISTANCE*(1/(Math.PI*2*RADIUS_OF_SPOOL))*GEAR_RATIO*TICKS_PER_MOTOR_REV_GOBILDA/8);
+        int ticks=LOCK_DISTANCE;
+        lifter.setTargetPosition(ticks);
         lifter.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        lifter.setPower(0.5);
+        lifter.setPower(0.15);
         isLocked = true;
     }
 
     public void lift(){
-        int ticks=(int)(LIFT_DISTANCE*(1/(Math.PI*2*RADIUS_OF_SPOOL))*GEAR_RATIO*TICKS_PER_MOTOR_REV_GOBILDA/8);
-        lifter.setTargetPosition(ticks + lifter.getCurrentPosition());
+//        int ticks=(int)(LIFT_DISTANCE*(1/(Math.PI*2*RADIUS_OF_SPOOL))*GEAR_RATIO*TICKS_PER_MOTOR_REV_GOBILDA/8);
+        int ticks=LIFT_DISTANCE;
+        lifter.setTargetPosition(ticks);
         lifter.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        lifter.setPower(0.5);
+        lifter.setPower(0.15);
         isLifted=true;
         isLocked=false;
 
     }
 
     public void unlock(){
-        int ticks=(int)(UNLOCK_DISTANCE*(1/(Math.PI*2*RADIUS_OF_SPOOL))*GEAR_RATIO*TICKS_PER_MOTOR_REV_GOBILDA/8);
-        lifter.setTargetPosition(ticks + lifter.getCurrentPosition());
+  //      int ticks=(int)(UNLOCK_DISTANCE*(1/(Math.PI*2*RADIUS_OF_SPOOL))*GEAR_RATIO*TICKS_PER_MOTOR_REV_GOBILDA/8);
+        int ticks=UNLOCK_DISTANCE;
+        lifter.setTargetPosition(ticks);
         lifter.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         lifter.setPower(0.5);
         isUnlocked = true;
@@ -723,12 +842,12 @@ public class Robot {
     }
 
     public void moveDownToStart(){
-        int lockTicks=(int)(LOCK_DISTANCE*(1/(Math.PI*2*RADIUS_OF_SPOOL))*GEAR_RATIO*TICKS_PER_MOTOR_REV_GOBILDA/8);
-        int unlockTicks=(int)(UNLOCK_DISTANCE*(1/(Math.PI*2*RADIUS_OF_SPOOL))*GEAR_RATIO*TICKS_PER_MOTOR_REV_GOBILDA/8);
-        int liftTicks=(int)(LIFT_DISTANCE*(1/(Math.PI*2*RADIUS_OF_SPOOL))*GEAR_RATIO*TICKS_PER_MOTOR_REV_GOBILDA/8);
-        lifter.setTargetPosition(lifter.getCurrentPosition() - lockTicks - unlockTicks-liftTicks);
+      //  int lockTicks=(int)(LOCK_DISTANCE*(1/(Math.PI*2*RADIUS_OF_SPOOL))*GEAR_RATIO*TICKS_PER_MOTOR_REV_GOBILDA/8);
+        //int unlockTicks=(int)(UNLOCK_DISTANCE*(1/(Math.PI*2*RADIUS_OF_SPOOL))*GEAR_RATIO*TICKS_PER_MOTOR_REV_GOBILDA/8);
+        //int liftTicks=(int)(LIFT_DISTANCE*(1/(Math.PI*2*RADIUS_OF_SPOOL))*GEAR_RATIO*TICKS_PER_MOTOR_REV_GOBILDA/8);
+        lifter.setTargetPosition(0);
         lifter.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        lifter.setPower(0.5);
+        lifter.setPower(0.15);
         isUnlocked = false;
     }
 
@@ -767,7 +886,7 @@ public class Robot {
 //    }
 
     public void moveLifter(double power){
-        lifter.setPower(power/8);
+        lifter.setPower(power/4);
     }
 
     public int getLifterPosition(){
@@ -1375,51 +1494,58 @@ public class Robot {
         }
 
 
+    public int getEncoderTicks(){
+        return left.getCurrentPosition();
+    }
 
-    public boolean isBlueOnLeft(){
-        NormalizedRGBA colors = colorSensor.getNormalizedColors();
+    public double calculateDistanceTraveled(int initialTicks){
+        return (getEncoderTicks()-initialTicks)/(-1.0*(1/(Math.PI*WHEEL_DIAMETER))*GEAR_RATIO*TICKS_PER_MOTOR_REV);
+    }
 
-        Color.colorToHSV(colors.toColor(), hsvValues);
-//        telemetry.addLine()
-//                .addData("H", "%.3f", hsvValues[0])
-//                .addData("S", "%.3f", hsvValues[1])
-//                .addData("V", "%.3f", hsvValues[2]);
-//        telemetry.addLine()
-//                .addData("a", "%.3f", colors.alpha)
-//                .addData("r", "%.3f", colors.red)
-//                .addData("g", "%.3f", colors.green)
-//                .addData("b", "%.3f", colors.blue);
-
-        /** We also display a conversion of the colors to an equivalent Android color integer.
-         * @see Color */
-        int color = colors.toColor();
-       /* telemetry.addLine("raw Android color: ")
-                .addData("a", "%02x", Color.alpha(color))
-                .addData("r", "%02x", Color.red(color))
-                .addData("g", "%02x", Color.green(color))
-                .addData("b", "%02x", Color.blue(color));
-*/
-        float max = Math.max(Math.max(Math.max(colors.red, colors.green), colors.blue), colors.alpha);
-        colors.red   /= max;
-        colors.green /= max;
-        colors.blue  /= max;
-        color = colors.toColor();
-
-        telemetry.addLine("normalized color:  ")
-                .addData("a", "%02x", Color.alpha(color))
-                .addData("r", "%02x", Color.red(color))
-                .addData("g", "%02x", Color.green(color))
-                .addData("b", "%02x", Color.blue(color))
-                .addData("blue - red: ", (int)Color.blue(color)-(int)Color.red(color));
-        telemetry.update();
-//take two values of "blue-red", multiply the most negative one by -1 and average the two numbers, replace the 52 below with the average
-
-        return (((int)Color.blue(color)) > ((int)Color.red(color)));
-
-//        if(((int)Color.red(color))-22>((int)Color.blue(color)))
-//            return false;
-//        return true;
-        }
+//    public boolean isGold(){
+//        NormalizedRGBA colors = colorSensor.getNormalizedColors();
+//
+//        Color.colorToHSV(colors.toColor(), hsvValues);
+////        telemetry.addLine()
+////                .addData("H", "%.3f", hsvValues[0])
+////                .addData("S", "%.3f", hsvValues[1])
+////                .addData("V", "%.3f", hsvValues[2]);
+////        telemetry.addLine()
+////                .addData("a", "%.3f", colors.alpha)
+////                .addData("r", "%.3f", colors.red)
+////                .addData("g", "%.3f", colors.green)
+////                .addData("b", "%.3f", colors.blue);
+//
+//        /** We also display a conversion of the colors to an equivalent Android color integer.
+//         * @see Color */
+//        int color = colors.toColor();
+//       /* telemetry.addLine("raw Android color: ")
+//                .addData("a", "%02x", Color.alpha(color))
+//                .addData("r", "%02x", Color.red(color))
+//                .addData("g", "%02x", Color.green(color))
+//                .addData("b", "%02x", Color.blue(color));
+//*/
+//        float max = Math.max(Math.max(Math.max(colors.red, colors.green), colors.blue), colors.alpha);
+//        colors.red   /= max;
+//        colors.green /= max;
+//        colors.blue  /= max;
+//        color = colors.toColor();
+//
+//        telemetry.addLine("normalized color:  ")
+//                .addData("a", "%02x", Color.alpha(color))
+//                .addData("r", "%02x", Color.red(color))
+//                .addData("g", "%02x", Color.green(color))
+//                .addData("b", "%02x", Color.blue(color))
+//                .addData("blue - red: ", (int)Color.blue(color)-(int)Color.red(color));
+//        telemetry.update();
+////take two values of "blue-red", multiply the most negative one by -1 and average the two numbers, replace the 52 below with the average
+//
+//        return (((int)Color.blue(color)) > ((int)Color.red(color)));
+//
+////        if(((int)Color.red(color))-22>((int)Color.blue(color)))
+////            return false;
+////        return true;
+//        }
 
 //    public void turnLightOff(SwitchableLight colorSensor){
 //        colorSensor.enableLight(false);
@@ -1447,58 +1573,62 @@ public class Robot {
 //        flipper.setPower(.15);
 //        runtime.reset();
 //    }
-//
-//    public void resetFlipper(){
-//        flipper.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-//    }
-//
-//    public boolean isFlip(){
-//        return isFlipping;
-//    }
-//
-//    public void startFlip(){
-//    //
-//        flipperTicks=(int)(angle/(360)*TICKS_PER_MOTOR_REV*flipperGearRatio);
-//        finalTicks=flipperTicks+flipper.getCurrentPosition();
-//        flipper.setTargetPosition(finalTicks);
-//        isFlipping=true;
-//    }
-//
-//    public void flip(){
-//        //first half constant .6
-//        //decrease constant acceleration to .2
-//        double constantVelocity=.6;
-//        double finalVelocity=.2;
-//        double acceleration=(Math.pow(finalVelocity,2)-Math.pow(constantVelocity,2)/(flipperTicks));
-//        double power;
-//        if(flipper.getCurrentPosition()+flipperTicks/2<finalTicks)
-//            power=.6;
-//        else if(flipper.getCurrentPosition()>finalTicks) {
-//            power = 0;
-//            isFlipping=false;
-//            doneFlip=true;
-//        }
-//        else
-//            power=Math.sqrt(Math.pow(constantVelocity,2)+2*(acceleration)*(flipperTicks/2-(finalTicks-flipper.getCurrentPosition())));
-//
-//        flipper.setPower(power);
-//    }
-//
-//    public void startFlipReturn(){
-//        flipperTicks=(int)(-1*angle/(360)*TICKS_PER_MOTOR_REV*flipperGearRatio);
-//        finalTicks=flipperTicks+flipper.getCurrentPosition();
-//        flipper.setTargetPosition(finalTicks);
-//        flipper.setPower(.6);
-//        doneFlip=false;
-//        finishingFlip=true;
-//    }
-//
-//    public void flippingBack(){
-//        if(flipper.getCurrentPosition()<flipper.getTargetPosition()) {
-//            flipper.setPower(0);
-//            finishingFlip=false;
-//        }
-//    }
+
+    public void resetFlipper(){
+        flipper.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+    }
+
+    public boolean isFlip(){
+        return isFlipping;
+    }
+
+    public void startFlip(){
+    //
+        flipperTicks=(int)(angle/(360)*TICKS_PER_MOTOR_REV*flipperGearRatio);
+        finalTicks=flipperTicks+flipper.getCurrentPosition();
+        flipper.setTargetPosition(finalTicks);
+        isFlipping=true;
+    }
+
+    public void flip(){
+        //first half constant .6
+        //decrease constant acceleration to .2
+        double constantVelocity=.6;
+        double finalVelocity=.2;
+        double acceleration=(Math.pow(finalVelocity,2)-Math.pow(constantVelocity,2)/(flipperTicks));
+        double power;
+        if(flipper.getCurrentPosition()+flipperTicks/2<finalTicks)
+            power=.6;
+        else if(flipper.getCurrentPosition()>finalTicks) {
+            power = 0;
+            isFlipping=false;
+            doneFlip=true;
+        }
+        else
+            power=Math.sqrt(Math.pow(constantVelocity,2)+2*(acceleration)*(flipperTicks/2-(finalTicks-flipper.getCurrentPosition())));
+
+        flipper.setPower(power);
+    }
+
+    public void startFlipReturn(){
+        flipperTicks=(int)(-1*angle/(360)*TICKS_PER_MOTOR_REV*flipperGearRatio);
+        finalTicks=flipperTicks+flipper.getCurrentPosition();
+        flipper.setTargetPosition(finalTicks);
+        flipper.setPower(.6);
+        doneFlip=false;
+        finishingFlip=true;
+    }
+
+    public void flippingBack(){
+        if(flipper.getCurrentPosition()<flipper.getTargetPosition()) {
+            flipper.setPower(0);
+            finishingFlip=false;
+        }
+    }
+
+    public void setFlipperPower(double power){
+        flipper.setPower(power/24);
+    }
 
 
 
