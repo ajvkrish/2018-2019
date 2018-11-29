@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
+
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -152,7 +153,7 @@ public class TwoControllerTeleOp extends OpMode {
             else
                 robot.undeployTeamMarker();
         }
-        telemetry.addData("Team Marker Position:",robot.getTmPosition());
+        //telemetry.addData("Team Marker Position:",robot.getTmPosition());
 //        if (controller1.right_trigger>.05)
 //            robot.moveFlipper(controller1.right_trigger * .15 * -1);
 //        else if (controller1.left_trigger>.05)
@@ -194,10 +195,10 @@ public class TwoControllerTeleOp extends OpMode {
 //        telemetry.addData("Current Velocity: ", robot.currentVeloity);
 //        telemetry.addData("Current Acceleration: ", robot.currentAcceleration);
         robot.getGold();
-        telemetry.addData("Lifter Ticks: ", robot.getLifterPosition());
-        telemetry.addData("Flipper Ticks: ", robot.getFlipperPosition());
-        telemetry.addData("Left Ticks: ", robot.getLeftPosition());
-        telemetry.addData("Right Ticks: ", robot.getRightPosition());
+//        telemetry.addData("Lifter Ticks: ", robot.getLifterPosition());
+//        telemetry.addData("Flipper Ticks: ", robot.getFlipperPosition());
+//        telemetry.addData("Left Ticks: ", robot.getLeftPosition());
+//        telemetry.addData("Right Ticks: ", robot.getRightPosition());
         telemetry.update();
     }
 }

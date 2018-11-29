@@ -50,7 +50,7 @@ public class unlatchAuto extends LinearOpMode{
         idle();
 
 
-        robot.encoderRun(52,.2);
+        robot.encoderRun(40,.2);
         sleep(10000);
         robot.finishMovement();
         idle();

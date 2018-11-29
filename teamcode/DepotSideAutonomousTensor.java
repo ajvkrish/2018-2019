@@ -34,7 +34,7 @@ public class DepotSideAutonomousTensor extends LinearOpMode{
         telemetry.addData("initialized",null);
         telemetry.update();
         waitForStart();
-        double finalRuntime=robot.runtime.seconds()+10;
+        double finalRuntime=robot.runtime.seconds()+5;
         while(path==0 && finalRuntime>robot.runtime.seconds()){
             path=robot.getGold();
         }
