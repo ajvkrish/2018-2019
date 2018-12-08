@@ -45,6 +45,7 @@ public class TwoControllerTeleOp extends OpMode {
 //        initialPosition= new Position(DistanceUnit.METER,0,0,0,0);
 //        initialVelocity= new Velocity(DistanceUnit.METER,0,0,0,0);
        // allTrackables=robot.vuforiaInit();
+        robot.shutdownTensorFlow();
     }
 
     @Override
@@ -143,6 +144,14 @@ public class TwoControllerTeleOp extends OpMode {
         //}
         robot.setMotors(leftPower, rightPower);
 
+
+        if(controller2.rightTriggerPressed())
+            robot.moveSweeper(controller2.right_trigger);
+        else
+            robot.moveSweeper(-1*controller2.left_trigger);
+        if(controller2.A())
+            robot.moveSweeper(1);
+
         if(controller2.AOnce())
             robot.incrementTmUp();
         if(controller2.BOnce())
@@ -194,11 +203,12 @@ public class TwoControllerTeleOp extends OpMode {
 //        telemetry.addData("Z: ",robot.currentPosition.z);
 //        telemetry.addData("Current Velocity: ", robot.currentVeloity);
 //        telemetry.addData("Current Acceleration: ", robot.currentAcceleration);
-        robot.getGold();
+//        robot.getGold();
 //        telemetry.addData("Lifter Ticks: ", robot.getLifterPosition());
 //        telemetry.addData("Flipper Ticks: ", robot.getFlipperPosition());
 //        telemetry.addData("Left Ticks: ", robot.getLeftPosition());
 //        telemetry.addData("Right Ticks: ", robot.getRightPosition());
+        telemetry.addData("Flipper Ticks: ",robot.getFlipperPosition());
         telemetry.update();
     }
 }

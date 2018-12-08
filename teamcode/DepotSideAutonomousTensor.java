@@ -36,10 +36,12 @@ public class DepotSideAutonomousTensor extends LinearOpMode{
         waitForStart();
         double finalRuntime=robot.runtime.seconds()+5;
         while(path==0 && finalRuntime>robot.runtime.seconds()){
-            path=robot.getGold();
+            path=robot.getGoldVertical();
         }
         sleep(1000);
-        path=robot.getGold();
+        path=robot.getGoldVertical();
+
+        robot.shutdownTensorFlow();
 
         robot.unlatch();
         sleep(150);
@@ -88,7 +90,7 @@ public class DepotSideAutonomousTensor extends LinearOpMode{
             telemetry.update();
             idle();
 
-            robot.encoderTurn(66.8,.2);
+            robot.encoderTurn(55,.2);
             sleep(3000);
             robot.finishMovement();
             idle();
@@ -97,15 +99,15 @@ public class DepotSideAutonomousTensor extends LinearOpMode{
             idle();
 
             robot.encoderRun(26.7,.2);
-            sleep(4000);
+            sleep(2500);
             robot.finishMovement();
             idle();
             telemetry.addData("run complete","");
             telemetry.update();
             idle();
 
-            robot.encoderTurn(197,.25);
-            sleep(6000);
+            robot.encoderTurn(167,.25);
+            sleep(4000);
             robot.finishMovement();
             idle();
             telemetry.addData("run complete","");
@@ -130,11 +132,11 @@ public class DepotSideAutonomousTensor extends LinearOpMode{
             telemetry.update();
             idle();
 
-            robot.encoderRun(50,.25);
+            robot.encoderRun(46,.25);
             sleep(3000);
             idle();
             robot.moveDownToStart();
-            sleep(3000);
+            sleep(1500);
             idle();
             telemetry.addData("done unlocking","");
             telemetry.update();
@@ -161,20 +163,14 @@ public class DepotSideAutonomousTensor extends LinearOpMode{
             telemetry.update();
             idle();
 
-            robot.deployTeamMarker();
-            idle();
-            sleep(1000);
-            telemetry.addData("Team Marker Deployed","");
-            telemetry.update();
-            idle();
-
-            robot.encoderTurn(-87,.2);
-            sleep(4000);
+            robot.encoderTurn(-80,.2);
+            sleep(3000);
             robot.finishMovement();
             idle();
             telemetry.addData("run complete","");
             telemetry.update();
             idle();
+
         }
         else{
             robot.encoderRun(64,.25);
@@ -208,12 +204,12 @@ public class DepotSideAutonomousTensor extends LinearOpMode{
 
         robot.deployTeamMarker();
         idle();
-        sleep(1000);
+        sleep(500);
         telemetry.addData("Team Marker Deployed","");
         telemetry.update();
         idle();
 
-        robot.encoderRun(82,.2);
+        robot.encoderRun(82,.35);
         sleep(10000);
         robot.finishMovement();
         idle();

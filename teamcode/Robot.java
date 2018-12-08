@@ -12,6 +12,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.SwitchableLight;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -65,7 +66,7 @@ public class Robot {
     public ElapsedTime runtime = new ElapsedTime();
     public double initialRunTime=runtime.seconds();
 
-    public final DcMotor left, right;
+    private final DcMotor left, right;
     private final DcMotor lifter;
 //    public final DcMotor rake;
 //    private final Servo gripper1, gripper2;
@@ -73,6 +74,7 @@ public class Robot {
     //private final Servo relicArmGripper;
     private final DcMotor flipper;
     private final Servo tm;
+    private final CRServo sweeper;
 //    private final Servo relicClaw;
   //  public final NormalizedColorSensor colorSensor;
 
@@ -240,7 +242,7 @@ public class Robot {
         //relicArmGripper = hardwareMap.servo.get("");
         flipper = hardwareMap.dcMotor.get("flipper");
         tm = hardwareMap.servo.get("tm");
-//        relicClaw = hardwareMap.servo.get("relicClaw");
+        sweeper = hardwareMap.crservo.get("sweeper");
      //   colorSensor = hardwareMap.get(NormalizedColorSensor.class, "cs");
 
 //        rake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -261,6 +263,8 @@ public class Robot {
         lifter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         lifter.setDirection(DcMotorSimple.Direction.FORWARD);
 
+        flipper.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
         left.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         right.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
@@ -274,9 +278,9 @@ public class Robot {
         parameters.mode = BNO055IMU.SensorMode.IMU;
         imu.initialize(parameters);
 
-        gravity=imu.getGravity();
-        xGravAdjustment=gravity.xAccel;
-        yGravAdjustment=gravity.yAccel;
+  //      gravity=imu.getGravity();
+//        xGravAdjustment=gravity.xAccel;
+//        yGravAdjustment=gravity.yAccel;
 //
 //        openGripper1();
 //        openGripper2();
@@ -391,6 +395,76 @@ public class Robot {
         return 0;
     }
 
+    public int getGoldVertical() {
+        boolean foundGold=false;
+        if (tfod != null) {
+            tfod.activate();
+        }
+
+        if (tfod != null) {
+            // getUpdatedRecognitions() will return null if no new information is available since
+            // the last time that call was made.
+            List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
+            if (updatedRecognitions != null) {
+                telemetry.addData("# Object Detected", updatedRecognitions.size());
+                for (Recognition recognition : updatedRecognitions) {
+                    if (recognition.getLabel().equals(LABEL_GOLD_MINERAL)) {
+                        foundGold=true;
+                    }
+                }
+                if (updatedRecognitions.size() >= 2 || foundGold) {
+                    int goldMineralX = -1;
+                    int silverMineral1X = -1;
+                    int silverMineral2X = -1;
+                    for (Recognition recognition : updatedRecognitions) {
+                        if (recognition.getLabel().equals(LABEL_GOLD_MINERAL)) {
+                            goldMineralX = (int) recognition.getLeft();
+//                            telemetry.addData("Gold Left: ",(int) recognition.getLeft());
+//                            telemetry.addData("Gold Right: ",(int) recognition.getRight());
+//                            telemetry.addData("Gold Top: ",(int) recognition.getTop());
+//                            telemetry.addData("Gold Bottom: ",(int) recognition.getBottom());
+//                            telemetry.addData("Gold Confidence: ",(int) recognition.getConfidence());
+
+                        }
+                    }
+                    if(goldMineralX!=-1){
+                        if(goldMineralX<500)
+                            return 2;
+                        else if(goldMineralX>500)
+                            return 3;
+                    }
+                    else{
+                       return 1;
+                    }
+
+
+
+
+
+                    //                    if (goldMineralX != -1 && silverMineral1X != -1 && silverMineral2X != -1) {
+//                        if (goldMineralX < silverMineral1X && goldMineralX < silverMineral2X) {
+//                            telemetry.addData("Gold Mineral Position", "Left");
+//                            return 1;
+//                        } else if (goldMineralX > silverMineral1X && goldMineralX > silverMineral2X) {
+//                            telemetry.addData("Gold Mineral Position", "Right");
+//                            return 3;
+//                        } else {
+//                            telemetry.addData("Gold Mineral Position", "Center");
+//                            return 2;
+//                        }
+//                    }
+                }
+                telemetry.update();
+            }
+        }
+        return 0;
+    }
+
+
+    public void shutdownTensorFlow(){
+        tfod.shutdown();
+    }
+
     private void setMotorMode(DcMotor.RunMode mode, DcMotor... motors) {
         for (DcMotor motor : motors) {
             motor.setMode(mode);
@@ -428,12 +502,12 @@ public class Robot {
      * expensive.
      */
     public void loop() {
-        angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.RADIANS);
+        //angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.RADIANS);
 //        currentPosition=imu.getPosition();
 //        currentVeloity=imu.getVelocity();
 //        currentAcceleration=imu.getAcceleration();
-        iterations++;
-        ITERATIONSPERSECOND=1.0*iterations/(runtime.seconds()-initialRunTime);
+//        iterations++;
+//        ITERATIONSPERSECOND=1.0*iterations/(runtime.seconds()-initialRunTime);
 
 //        telemetry.addData("Iterations per Second: ", ITERATIONSPERSECOND);
 //        telemetry.addData("Iterations: ", iterations);
@@ -802,10 +876,10 @@ public class Robot {
     }
 
     public void deployTeamMarker(){
-        tm.setPosition(.64);
+        tm.setPosition(0);
     }
     public void undeployTeamMarker(){
-        tm.setPosition(0);
+        tm.setPosition(1);
     }
     public double getTmPosition(){
         return tm.getPosition();
@@ -842,7 +916,7 @@ public class Robot {
 //        lifter.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 //        lifter.setPower(0.1);
         lifter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        lifter.setPower(.4);
+        lifter.setPower(.6);
     }
 
     public void lock(){
@@ -1585,29 +1659,29 @@ public class Robot {
 //    public void turnLightOff(SwitchableLight colorSensor){
 //        colorSensor.enableLight(false);
 //    }
-//
-//    public void partialFlip(double degrees){
-//        flipper.setTargetPosition((int)(flipper.getCurrentPosition()-degrees*(1120.0/360.0)*(1.0/4.0)));
-//        flipper.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-//        flipper.setPower(.15);
-//        runtime.reset();
-//    }
-//
-//    public void doneFlip(){
-//        flipper.setPower(0);
-//        flipper.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//    }
-//
-//    public void holdFlipper(){
-//        flipper.setPower(-0.01);
-//    }
-//
-//    public void moveFlipperToPosition(int position) {
-//        flipper.setTargetPosition(position);
-//        flipper.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-//        flipper.setPower(.15);
-//        runtime.reset();
-//    }
+
+    public void partialFlip(double degrees){
+        flipper.setTargetPosition((int)(flipper.getCurrentPosition()-degrees*(1120.0/360.0)*(1.0/4.0)));
+        flipper.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        flipper.setPower(.15);
+        runtime.reset();
+    }
+
+    public void doneFlip(){
+        flipper.setPower(0);
+        flipper.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    }
+
+    public void holdFlipper(){
+        flipper.setPower(-0.01);
+    }
+
+    public void moveFlipperToPosition(int position) {
+        flipper.setTargetPosition(position);
+        flipper.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        flipper.setPower(.15);
+        runtime.reset();
+    }
 
     public void resetFlipper(){
         flipper.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -1662,9 +1736,12 @@ public class Robot {
     }
 
     public void setFlipperPower(double power){
-        flipper.setPower(power/24);
+        flipper.setPower(power/12);
     }
 
+    public void moveSweeper(double pow){
+        sweeper.setPower(pow);//pow/2+.5
+    }
 
 
 
