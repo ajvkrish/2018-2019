@@ -59,8 +59,8 @@ public class CraterSideAutonomousTensor extends LinearOpMode{
         idle();
 
         if(path==1){
-            robot.encoderRun(3,.2);
-            sleep(1500);
+            robot.encoderRun(3,.25);
+            sleep(500);
             robot.finishMovement();
             idle();
             telemetry.addData("run complete","");
@@ -74,16 +74,16 @@ public class CraterSideAutonomousTensor extends LinearOpMode{
 //        telemetry.update();
 //        idle();
 
-            robot.encoderTurn(-21.8,.2);
-            sleep(2000);
+            robot.encoderTurn(-21.8,.3);
+            sleep(1000);
             robot.finishMovement();
             idle();
             telemetry.addData("run complete","");
             telemetry.update();
             idle();
 
-            robot.encoderRun(23,.25);
-            sleep(4000);
+            robot.encoderRun(25,.3);
+            sleep(2250);
             idle();
             robot.finishMovement();
             idle();
@@ -91,8 +91,8 @@ public class CraterSideAutonomousTensor extends LinearOpMode{
             telemetry.update();
             idle();
 
-            robot.encoderRun(-14,.25);
-            sleep(2000);
+            robot.encoderRun(-6,.25);
+            sleep(1000);
             robot.finishMovement();
             idle();
             telemetry.addData("run complete","");
@@ -100,16 +100,16 @@ public class CraterSideAutonomousTensor extends LinearOpMode{
             idle();
 
 
-            robot.encoderTurn(-68.2,.25);
+            robot.encoderTurn(-68.2,.3);
+            sleep(2500);
+            robot.finishMovement();
+            idle();
+            telemetry.addData("run complete","");
+            telemetry.update();
+            idle();
+
+            robot.encoderRun(34,.3);
             sleep(3000);
-            robot.finishMovement();
-            idle();
-            telemetry.addData("run complete","");
-            telemetry.update();
-            idle();
-
-            robot.encoderRun(34,.25);
-            sleep(3500);
             robot.finishMovement();
             idle();
             telemetry.addData("run complete","");
@@ -118,8 +118,8 @@ public class CraterSideAutonomousTensor extends LinearOpMode{
 
         }
         else if(path==3){
-            robot.encoderRun(3,.2);
-            sleep(750);
+            robot.encoderRun(3,.25);
+            sleep(500);
             robot.finishMovement();
             idle();
             telemetry.addData("run complete","");
@@ -133,16 +133,16 @@ public class CraterSideAutonomousTensor extends LinearOpMode{
 //        telemetry.update();
 //        idle();
 
-            robot.encoderTurn(21.8,.2);
-            sleep(2000);
+            robot.encoderTurn(21.8,.3);
+            sleep(1000);
             robot.finishMovement();
             idle();
             telemetry.addData("run complete","");
             telemetry.update();
             idle();
 
-            robot.encoderRun(23,.25);
-            sleep(4000);
+            robot.encoderRun(25,.3);
+            sleep(2250);
             idle();
             robot.finishMovement();
             idle();
@@ -150,8 +150,8 @@ public class CraterSideAutonomousTensor extends LinearOpMode{
             telemetry.update();
             idle();
 
-            robot.encoderRun(-14,.25);
-            sleep(2000);
+            robot.encoderRun(-6,.25);
+            sleep(1000);
             robot.finishMovement();
             idle();
             telemetry.addData("run complete","");
@@ -159,7 +159,7 @@ public class CraterSideAutonomousTensor extends LinearOpMode{
             idle();
 
 
-            robot.encoderTurn(-111.8,.3);
+            robot.encoderTurn(-111.8,.35);
             sleep(3500);
             robot.finishMovement();
             idle();
@@ -167,7 +167,7 @@ public class CraterSideAutonomousTensor extends LinearOpMode{
             telemetry.update();
             idle();
 
-            robot.encoderRun(55,.25);
+            robot.encoderRun(55,.35);
             sleep(5000);
             robot.finishMovement();
             idle();
@@ -218,24 +218,24 @@ public class CraterSideAutonomousTensor extends LinearOpMode{
 
         }
 
-        robot.encoderTurn(-45,.25);
-        sleep(1500);
+        robot.encoderTurn(-45,.3);
+        sleep(1250);
         robot.finishMovement();
         idle();
         telemetry.addData("run complete","");
         telemetry.update();
         idle();
 
-        robot.encoderRun(37,.25);
-        sleep(4000);
-        robot.finishMovement();
-        idle();
-        telemetry.addData("run complete","");
-        telemetry.update();
-        idle();
-
-        robot.encoderTurn(-90,.25);
+        robot.encoderRun(37,.3);
         sleep(3000);
+        robot.finishMovement();
+        idle();
+        telemetry.addData("run complete","");
+        telemetry.update();
+        idle();
+
+        robot.encoderTurn(-90,.3);
+        sleep(2000);
         robot.finishMovement();
         idle();
         telemetry.addData("run complete","");
@@ -249,21 +249,25 @@ public class CraterSideAutonomousTensor extends LinearOpMode{
         telemetry.update();
         idle();
 
-        robot.encoderTurn(-100,.25);
-        sleep(3000);
+        robot.encoderTurn(-115,.35);
+        sleep(2500);
         robot.finishMovement();
         idle();
         telemetry.addData("run complete","");
         telemetry.update();
         idle();
 
-        robot.encoderRun(50,.4);
+        robot.encoderRun(60,.4);
         sleep(8000);
         robot.finishMovement();
         idle();
         telemetry.addData("run complete","");
         telemetry.update();
         idle();
+
+        //Jason can I touch your face?
+        //Type answer here:
+
 
     }
 

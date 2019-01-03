@@ -139,9 +139,13 @@ public class TwoControllerTeleOp extends OpMode {
 //        telemetry.addData("Is Blue on Left? ",robot.isBlueOnLeft());
 
         //if(tankDrive){
-        double leftPower=Math.pow(controller1.left_stick_y,3)/2;
-        double rightPower=Math.pow(controller1.right_stick_y,3)/2;
+        double leftPower=Math.pow(controller1.left_stick_y,3);
+        double rightPower=Math.pow(controller1.right_stick_y,3);
         //}
+        if(robot.flippingOver()){
+            leftPower=1;
+            rightPower=1;
+        }
         robot.setMotors(leftPower, rightPower);
 
 
@@ -209,6 +213,7 @@ public class TwoControllerTeleOp extends OpMode {
 //        telemetry.addData("Left Ticks: ", robot.getLeftPosition());
 //        telemetry.addData("Right Ticks: ", robot.getRightPosition());
         telemetry.addData("Flipper Ticks: ",robot.getFlipperPosition());
+        robot.getGyroGravity();
         telemetry.update();
     }
 }

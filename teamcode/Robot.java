@@ -68,9 +68,9 @@ public class Robot {
 
     private final DcMotor left, right;
     private final DcMotor lifter;
-//    public final DcMotor rake;
+    public final DcMotor rake;
 //    private final Servo gripper1, gripper2;
-//    private final Servo wrist;
+    private final Servo wrist;
     //private final Servo relicArmGripper;
     private final DcMotor flipper;
     private final Servo tm;
@@ -94,6 +94,21 @@ public class Robot {
     private final int LOCK_DISTANCE = -2100;//2600
     private final int UNLOCK_DISTANCE = -2600;//2900
     private final int LIFT_DISTANCE=-1400;//600
+
+    //Rake variables
+    private final int MAX_RAKE_TICKS=0;
+    private final int UNLOAD_RAKE_TICKS=0;
+    private final int MIDDLE_GOLD_TICKS=0;
+    private final int RIGHT_GOLD_TICKS=0;
+    private final int LEFT_GOLD_TICKS=0;
+    private final int LOAD_RAKE_TICKS=0;
+    public int STATE=0;
+    private final double WRIST_DOWN=0;
+    private final double WRIST_MIDDLE=0.3;
+    private final double WRIST_UP=1;
+    private double WRIST_TIMER=0;
+    private boolean collecting=false;
+    private boolean raising=false;
 
     private final double GRIPPER1_CLOSED = .4;
     private final double GRIPPER1_OPEN = 0.0;
@@ -234,8 +249,8 @@ public class Robot {
 
         left = hardwareMap.dcMotor.get("left");
         right = hardwareMap.dcMotor.get("right");
-//        rake = hardwareMap.dcMotor.get("rake");
-//        wrist = hardwareMap.servo.get("wrist");
+        rake = hardwareMap.dcMotor.get("rake");
+        wrist = hardwareMap.servo.get("wrist");
 //        gripper1 = hardwareMap.servo.get("gripper1");
 //        gripper2 = hardwareMap.servo.get("gripper2");
         lifter = hardwareMap.dcMotor.get("lifter");
@@ -292,7 +307,74 @@ public class Robot {
 //        }
 //
         flipper.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        rake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
     }
+
+    //Methods: pick up mineral, drop mineral, arm extension, retract arm, gold left, gold middle, gold right custom extend, state machine(boolean)
+    //state: 0=default-custom extend, 1=extend, 2=,collect, 3=retract, 4=dump
+           public void customExtend(double power)
+           {
+               if (power>=0)
+                   rake.setTargetPosition(MAX_RAKE_TICKS);
+               else
+                   rake.setTargetPosition(UNLOAD_RAKE_TICKS);
+               rake.setPower(Math.abs(power));
+
+           }
+
+           public void extend()
+           {
+               rake.setPower(0.3);
+               if (rake.getCurrentPosition()>rake.getTargetPosition()-25)
+                   STATE=0;
+
+           }
+           public void collect()
+           {
+                if(WRIST_TIMER<runtime.seconds() && collecting) {
+                    collecting = false;
+                    raising = true;
+                    WRIST_TIMER+=.3;
+                    wrist.setPosition(WRIST_MIDDLE);
+                }
+               if(WRIST_TIMER<runtime.seconds() && raising) {
+                   raising = false;
+                   STATE=0;
+               }
+           }
+           public void startCollection()
+           {
+                WRIST_TIMER=runtime.seconds()+.3;
+                collecting=true;
+                wrist.setPosition(WRIST_DOWN);
+           }
+           public void retract()
+           {
+               rake.setTargetPosition(UNLOAD_RAKE_TICKS);
+               rake.setPower(0.3);
+           }
+        public void dump()
+        {
+            if(WRIST_TIMER<runtime.seconds() && collecting) {
+                collecting = false;
+                raising = true;
+                WRIST_TIMER+=.3;
+                wrist.setPosition(WRIST_MIDDLE);
+            }
+            if(WRIST_TIMER<runtime.seconds() && raising) {
+                raising = false;
+                STATE=0;
+            }
+        }
+        public void startDumping()
+        {
+            WRIST_TIMER=runtime.seconds()+.3;
+            raising=true;
+            wrist.setPosition(WRIST_UP);
+        }
 
     private void initVuforia() {
         /*
@@ -1741,6 +1823,17 @@ public class Robot {
 
     public void moveSweeper(double pow){
         sweeper.setPower(pow);//pow/2+.5
+    }
+
+    public void getGyroGravity(){
+        telemetry.addData("Gravity: ",imu.getGravity());
+        telemetry.addData("Angular Orientation: ",imu.getAngularOrientation());
+        telemetry.addData("Is Calibrated: ",imu.getCalibrationStatus());
+        telemetry.addData("Is Calibrated: ",imu.getGravity().xAccel);
+    }
+
+    public boolean flippingOver(){
+         return imu.getGravity().xAccel>5&&imu.getGravity().xAccel<9;
     }
 
 
